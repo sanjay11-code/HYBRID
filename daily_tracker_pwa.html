@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Daily Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:#0f1117;
+  color:#e8eaf0;
+  min-height:100vh;
+  padding:0;
+}
+
+/* ── Tokens ── */
+:root{
+  --bg:#0f1117;
+  --surface-0:#181c27;
+  --surface-1:#1e2333;
+  --surface-2:#242a3d;
+  --surface-3:#2c3350;
+  --border:#2e3650;
+  --border-strong:#3d4a6e;
+  --border-accent:#5b7fff;
+  --text-primary:#e8eaf0;
+  --text-secondary:#8f9cc2;
+  --text-muted:#5a6380;
+  --text-accent:#7b9fff;
+  --text-success:#4ade80;
+  --text-danger:#f87171;
+  --fill-success:#22c55e;
+  --fill-danger:#ef4444;
+  --fill-warning:#f59e0b;
+  --radius:8px;
+  --radius-lg:12px;
+  --shadow:0 2px 12px rgba(0,0,0,.4);
+}
+
+/* ── Layout ── */
+.app{max-width:640px;margin:0 auto;padding:24px 16px 60px}
+
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.hdr h1{font-size:20px;font-weight:600;color:var(--text-primary);letter-spacing:-.02em}
+.hdr p{font-size:13px;color:var(--text-muted);margin-top:3px}
+.reset-btn{font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;text-decoration:underline;padding:4px 0}
+.reset-btn:hover{color:var(--text-secondary)}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:2px;background:var(--surface-1);border-radius:var(--radius);padding:3px;margin-bottom:24px;border:0.5px solid var(--border)}
+.tab{flex:1;padding:8px 0;font-size:13px;font-weight:400;color:var(--text-secondary);background:none;border:none;cursor:pointer;border-radius:6px;transition:all .15s;text-align:center;font-family:inherit}
+.tab.active{background:var(--surface-3);color:var(--text-primary);font-weight:500;border:0.5px solid var(--border-strong)}
+.tab:not(.active):hover{background:var(--surface-2)}
+.view{display:none}.view.active{display:block}
+
+/* ── Summary cards ── */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:24px}
+.scard{background:var(--surface-1);border-radius:var(--radius-lg);padding:12px 14px;border:0.5px solid var(--border)}
+.scard-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;font-weight:500}
+.scard-val{font-size:20px;font-weight:600;color:var(--text-primary);line-height:1;letter-spacing:-.02em}
+.scard-sub{font-size:11px;color:var(--text-secondary);margin-top:4px}
+.scard.deficit .scard-val{color:var(--text-success)}
+.scard.surplus .scard-val{color:var(--text-danger)}
+
+/* ── Sections ── */
+.section{margin-bottom:20px}
+.sec-title{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+
+/* ── Cards ── */
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:8px}
+.card-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.card-row:last-child{margin-bottom:0}
+.check-circle{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s;background:transparent}
+.check-circle.on{background:var(--fill-success);border-color:var(--fill-success)}
+.check-icon{display:none;width:12px;height:12px;stroke:white;stroke-width:2.5;fill:none}
+.check-circle.on .check-icon{display:block}
+.card-label{font-size:15px;color:var(--text-primary);flex:1;font-weight:400}
+
+/* ── Fields ── */
+.fields{display:flex;flex-wrap:wrap;gap:10px;padding-left:34px}
+.fields.ni{padding-left:0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text-muted);font-weight:500;letter-spacing:.03em}
+.field input,.field select{
+  font-size:14px;padding:7px 10px;
+  border:0.5px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--surface-1);
+  color:var(--text-primary);
+  font-family:inherit;
+  transition:border-color .15s;
+  outline:none;
+}
+.field input:focus,.field select:focus{border-color:var(--border-accent)}
+.field input::placeholder{color:var(--text-muted)}
+.field select option{background:var(--surface-2)}
+.field select optgroup{background:var(--surface-1);color:var(--text-muted)}
+.field.sm input,.field.sm select{width:92px}
+.field.md input,.field.md select{width:158px}
+.field.lg input,.field.lg select{width:220px}
+
+.hint{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+.hint.ind{padding-left:34px}
+.divider{border:none;border-top:0.5px solid var(--border);margin:12px 0}
+
+/* ── Protein bar ── */
+.prog-wrap{background:var(--surface-1);border-radius:99px;height:4px;margin-top:8px;overflow:hidden}
+.prog-bar{height:4px;border-radius:99px;background:var(--fill-success);transition:width .4s ease}
+.prog-bar.warn{background:var(--fill-warning)}
+
+/* ── Calorie chips ── */
+.cal-breakdown{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;color:var(--text-secondary);background:var(--surface-1);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px}
+
+/* ── Week view ── */
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.week-nav-btn{
+  background:none;border:0.5px solid var(--border);
+  border-radius:var(--radius);padding:6px 14px;
+  font-size:13px;color:var(--text-primary);
+  cursor:pointer;font-family:inherit;transition:background .15s;
+}
+.week-nav-btn:disabled{opacity:.3;cursor:default}
+.week-nav-btn:not(:disabled):hover{background:var(--surface-2)}
+.week-label{font-size:14px;font-weight:500;color:var(--text-primary)}
+
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px}
+.day-col{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border-radius:8px;padding:4px 2px;transition:background .15s}
+.day-col:hover{background:var(--surface-3)}
+.day-col.selected{outline:1.5px solid var(--border-accent);outline-offset:1px}
+.day-name{font-size:10px;color:var(--text-muted);text-align:center;line-height:1.4}
+.day-name .day-date{font-size:9px;display:block}
+.day-bar-wrap{width:100%;height:68px;display:flex;align-items:flex-end;justify-content:center}
+.day-bar{width:68%;border-radius:3px 3px 0 0;background:var(--border);min-height:3px;transition:height .3s}
+.day-bar.def{background:var(--fill-success)}
+.day-bar.sur{background:var(--fill-danger)}
+.day-val{font-size:9px;color:var(--text-secondary);text-align:center}
+.day-dots{display:flex;gap:3px;height:5px;align-items:center}
+.day-dot{width:5px;height:5px;border-radius:50%;background:var(--border-strong)}
+.day-dot.run{background:#60a5fa}
+.day-dot.wkt{background:#fbbf24}
+.today-ring .day-name{color:var(--text-accent);font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}
+.legend-item{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.legend-swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
+.legend-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+.week-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:20px}
+
+.day-detail{background:var(--surface-2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-top:12px}
+.day-detail-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:10px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border)}
+.detail-row:last-child{border-bottom:none}
+.detail-label{font-size:13px;color:var(--text-secondary)}
+.detail-val{font-size:13px;font-weight:500;color:var(--text-primary)}
+.detail-val.def{color:var(--text-success)}
+.detail-val.sur{color:var(--text-danger)}
+
+.all-weeks-title{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin:24px 0 10px}
+.all-weeks{display:flex;flex-direction:column;gap:8px}
+.week-row{background:var(--surface-2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.week-row-label{font-size:13px;font-weight:500;color:var(--text-primary);min-width:110px}
+.week-row-stat{display:flex;flex-direction:column;gap:2px}
+.week-row-stat .ws-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
+.week-row-stat .ws-val{font-size:13px;font-weight:500;color:var(--text-primary)}
+
+/* ── BMR ── */
+.bmr-result{margin-top:14px;padding:14px;background:var(--surface-1);border-radius:var(--radius);display:flex;gap:18px;flex-wrap:wrap;align-items:center;border:0.5px solid var(--border)}
+.bmr-val{display:flex;flex-direction:column;gap:3px}
+.bmr-val .bv-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.bmr-val .bv-num{font-size:19px;font-weight:600;color:var(--text-primary);letter-spacing:-.02em}
+.use-btn{font-size:13px;padding:7px 16px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-3);color:var(--text-primary);cursor:pointer;margin-left:auto;font-family:inherit;transition:background .15s}
+.use-btn:hover{background:var(--border-strong)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--surface-0)}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+
+@media(max-width:480px){
+  .app{padding:16px 12px 60px}
+  .summary{grid-template-columns:repeat(2,1fr)}
+  .week-stats{grid-template-columns:repeat(2,1fr)}
+  .fields{gap:8px}
+  .field.md input,.field.md select{width:140px}
+  .field.lg input,.field.lg select{width:100%}
+}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1117">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div>
+      <h1>Daily tracker</h1>
+      <p id="date-lbl"></p>
+    </div>
+    <button class="reset-btn" onclick="resetDay()">↺ Reset day</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')">Today</button>
+    <button class="tab" onclick="switchTab('week')">Weekly</button>
+    <button class="tab" onclick="switchTab('bmr')">BMR calc</button>
+  </div>
+
+  <!-- ══ TODAY ══ -->
+  <div class="view active" id="view-today">
+    <div class="summary">
+      <div class="scard"><div class="scard-label">Maintenance</div><div class="scard-val" id="s-tdee">—</div><div class="scard-sub">BMR × activity</div></div>
+      <div class="scard"><div class="scard-label">Total burned</div><div class="scard-val" id="s-out">—</div><div class="scard-sub">TDEE + exercise</div></div>
+      <div class="scard"><div class="scard-label">Calories in</div><div class="scard-val" id="s-in">—</div><div class="scard-sub">kcal consumed</div></div>
+      <div class="scard" id="s-balance-card"><div class="scard-label" id="s-balance-label">Balance</div><div class="scard-val" id="s-balance">—</div><div class="scard-sub" id="s-balance-sub">—</div></div>
+      <div class="scard"><div class="scard-label">Protein</div><div class="scard-val" id="s-protein">—</div><div class="scard-sub">of <span id="s-pg">120</span>g goal</div><div class="prog-wrap"><div class="prog-bar" id="s-protein-bar" style="width:0%"></div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Baseline</div>
+      <div class="card">
+        <div class="fields ni">
+          <div class="field sm"><label>BMR (kcal)</label><input type="number" id="bmr" placeholder="1600" min="800" max="4000" oninput="save()"/></div>
+          <div class="field sm"><label>Body weight (kg)</label><input type="number" id="bw" placeholder="62" min="30" max="200" step="0.1" oninput="save()"/></div>
+          <div class="field sm"><label>Protein goal (g)</label><input type="number" id="protein-goal" placeholder="120" min="0" max="400" oninput="save()"/></div>
+        </div>
+        <div class="divider"></div>
+        <div class="fields ni">
+          <div class="field lg">
+            <label>Activity level today</label>
+            <select id="activity" onchange="save()">
+              <option value="1.2">Sedentary — desk, no exercise (×1.2)</option>
+              <option value="1.375">Lightly active — light movement (×1.375)</option>
+              <option value="1.55" selected>Moderately active — training day (×1.55)</option>
+              <option value="1.725">Very active — hard training + active day (×1.725)</option>
+              <option value="1.9">Extra active — intense double sessions (×1.9)</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" id="tdee-hint"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Running</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="check-circle" id="run-check" onclick="toggleCheck('run')">
+            <svg class="check-icon" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <span class="card-label">Running session</span>
+        </div>
+        <div class="fields">
+          <div class="field sm"><label>Distance (km)</label><input type="number" id="run-km" placeholder="0.0" min="0" max="100" step="0.1" oninput="save()"/></div>
+          <div class="field sm"><label>Duration (min)</label><input type="number" id="run-dur" placeholder="0" min="0" max="300" step="1" oninput="save()"/></div>
+        </div>
+        <div class="hint ind" id="run-hint"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Workout</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="check-circle" id="wkt-check" onclick="toggleCheck('wkt')">
+            <svg class="check-icon" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <span class="card-label">Workout session</span>
+        </div>
+        <div class="fields">
+          <div class="field md">
+            <label>Split</label>
+            <select id="wkt-split" onchange="onSplitChange()">
+              <option value="">— select —</option>
+              <optgroup label="Push / Pull / Legs">
+                <option value="Push">Push</option><option value="Pull">Pull</option><option value="Legs">Legs</option>
+              </optgroup>
+              <optgroup label="Upper / Lower">
+                <option value="Upper body">Upper body</option><option value="Lower body">Lower body</option>
+              </optgroup>
+              <optgroup label="Muscle focus">
+                <option value="Chest">Chest</option><option value="Back">Back</option>
+                <option value="Shoulders">Shoulders</option><option value="Arms">Arms (biceps &amp; triceps)</option>
+                <option value="Lats">Lats</option><option value="Glutes and hamstrings">Glutes &amp; hamstrings</option>
+                <option value="Quads and calves">Quads &amp; calves</option><option value="Core">Core</option>
+              </optgroup>
+              <optgroup label="Conditioning">
+                <option value="HYROX training">HYROX training</option>
+                <option value="Cardio and conditioning">Cardio &amp; conditioning</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="Full body">Full body</option>
+                <option value="Active recovery">Active recovery</option>
+                <option value="Rest day">Rest day</option>
+                <option value="Others">Others</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field lg" id="wkt-other-wrap" style="display:none">
+            <label>Describe split</label>
+            <input type="text" id="wkt-other" placeholder="e.g. mobility + core circuit" oninput="save()"/>
+          </div>
+        </div>
+        <div class="hint ind" id="wkt-hint"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Study session</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="check-circle" id="cls-check" onclick="toggleCheck('cls')">
+            <svg class="check-icon" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <span class="card-label">Study session</span>
+        </div>
+        <div class="fields">
+          <div class="field lg"><label>Topic / subject</label><input type="text" id="cls-topic" placeholder="e.g. HYROX drills, tempo training" oninput="save()"/></div>
+          <div class="field sm"><label>Hours studied</label><input type="number" id="cls-hrs" placeholder="0.0" min="0" max="24" step="0.25" oninput="save()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Nutrition</div>
+      <div class="card">
+        <div class="fields ni">
+          <div class="field sm"><label>Calories consumed (kcal)</label><input type="number" id="nut-cal" placeholder="0" min="0" max="6000" oninput="save()"/></div>
+          <div class="field sm"><label>Protein achieved (g)</label><input type="number" id="nut-protein" placeholder="0" min="0" max="500" oninput="save()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Calorie breakdown</div>
+      <div class="card"><div class="cal-breakdown" id="cal-breakdown"><span class="chip">Enter BMR and activity level above</span></div></div>
+    </div>
+  </div>
+
+  <!-- ══ WEEKLY ══ -->
+  <div class="view" id="view-week">
+    <div class="week-nav">
+      <button class="week-nav-btn" id="prev-week-btn" onclick="shiftWeek(-1)">← Prev</button>
+      <span class="week-label" id="week-label">—</span>
+      <button class="week-nav-btn" id="next-week-btn" onclick="shiftWeek(1)">Next →</button>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">Deficit / surplus this week</div>
+      <div class="card">
+        <div class="week-grid" id="week-grid"></div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-swatch" style="background:#22c55e"></span>Deficit</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>Surplus</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Run</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span>Workout</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="week-stats">
+      <div class="scard"><div class="scard-label">Total km</div><div class="scard-val" id="w-km">—</div><div class="scard-sub">running</div></div>
+      <div class="scard" id="w-avg-card"><div class="scard-label">Avg balance</div><div class="scard-val" id="w-avg">—</div><div class="scard-sub">kcal / logged day</div></div>
+      <div class="scard"><div class="scard-label">Sessions</div><div class="scard-val" id="w-sessions">—</div><div class="scard-sub">run + workout</div></div>
+      <div class="scard"><div class="scard-label">Study hours</div><div class="scard-val" id="w-study">—</div><div class="scard-sub">this week</div></div>
+      <div class="scard"><div class="scard-label">Avg protein</div><div class="scard-val" id="w-protein">—</div><div class="scard-sub">g / logged day</div></div>
+    </div>
+
+    <div id="day-detail-wrap"></div>
+
+    <div class="all-weeks-title">All weeks summary</div>
+    <div class="all-weeks" id="all-weeks">
+      <div style="font-size:13px;color:var(--text-muted)">No data yet. Start logging daily and it will appear here.</div>
+    </div>
+  </div>
+
+  <!-- ══ BMR ══ -->
+  <div class="view" id="view-bmr">
+    <div class="section">
+      <div class="sec-title">Mifflin-St Jeor formula</div>
+      <div class="card">
+        <div class="fields ni">
+          <div class="field sm"><label>Age (years)</label><input type="number" id="b-age" placeholder="25" min="10" max="100" oninput="calcBMR()"/></div>
+          <div class="field sm"><label>Height (cm)</label><input type="number" id="b-ht" placeholder="170" min="100" max="250" oninput="calcBMR()"/></div>
+          <div class="field sm"><label>Weight (kg)</label><input type="number" id="b-wt" placeholder="62" min="30" max="200" step="0.1" oninput="calcBMR()"/></div>
+          <div class="field md"><label>Sex</label>
+            <select id="b-sex" onchange="calcBMR()">
+              <option value="m">Male</option><option value="f">Female</option>
+            </select>
+          </div>
+        </div>
+        <div id="bmr-result" style="display:none" class="bmr-result">
+          <div class="bmr-val"><span class="bv-label">BMR</span><span class="bv-num" id="br-bmr">—</span></div>
+          <div class="bmr-val"><span class="bv-label">Sedentary TDEE</span><span class="bv-num" id="br-sed">—</span></div>
+          <div class="bmr-val"><span class="bv-label">Moderate TDEE</span><span class="bv-num" id="br-mod">—</span></div>
+          <button class="use-btn" onclick="useBMR()">Use this BMR →</button>
+        </div>
+        <div class="hint" id="bmr-formula" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const WKT_CALS={"Push":300,"Pull":300,"Legs":400,"Upper body":350,"Lower body":380,"Chest":280,"Back":300,"Shoulders":260,"Arms":240,"Lats":290,"Glutes and hamstrings":380,"Quads and calves":370,"Core":200,"HYROX training":550,"Cardio and conditioning":450,"Full body":420,"Active recovery":150,"Rest day":0,"Others":300};
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const profileKey="t6_profile";
+let weekOffset=0,selectedDay=null;
+
+function dateKey(d){return "t6_"+d.toDateString();}
+function gv(id,fb=0){const v=document.getElementById(id).value;return v===""?fb:parseFloat(v);}
+function calcRunCal(km,bw){return km&&bw?Math.round(km*bw*1.036):0;}
+function calcWktCal(split){return WKT_CALS[split]||0;}
+function splitLabel(d){return d.wktSplit==="Others"&&d.wktOther?d.wktOther:d.wktSplit;}
+
+function onSplitChange(){
+  const s=document.getElementById("wkt-split").value;
+  document.getElementById("wkt-other-wrap").style.display=s==="Others"?"flex":"none";
+  save();
+}
+
+function getNetForDay(data){
+  if(!data)return null;
+  const bw=data.bw||62,act=data.act||1.55,bmr=data.bmr||0;
+  const tdee=bmr>0?Math.round(bmr*act):0;
+  const runCal=calcRunCal(data.runKm||0,bw);
+  const wktCal=data.wktDone?calcWktCal(data.wktSplit):0;
+  const totalBurned=tdee+runCal+wktCal;
+  if(!data.nutCal&&!totalBurned)return null;
+  return (data.nutCal||0)-totalBurned;
+}
+
+function getWeekStart(offset){
+  const today=new Date(),dow=today.getDay();
+  const monday=new Date(today);
+  monday.setDate(today.getDate()-((dow+6)%7)+offset*7);
+  monday.setHours(0,0,0,0);return monday;
+}
+function getWeekDays(offset){
+  const start=getWeekStart(offset);
+  return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return d;});
+}
+
+function save(){
+  const bmr=gv("bmr",0),bw=gv("bw",62),pg=gv("protein-goal",120),act=parseFloat(document.getElementById("activity").value);
+  localStorage.setItem(profileKey,JSON.stringify({bmr,bw,pg}));
+  const wktSplit=document.getElementById("wkt-split").value;
+  const d={
+    runDone:document.getElementById("run-check").classList.contains("on"),
+    wktDone:document.getElementById("wkt-check").classList.contains("on"),
+    clsDone:document.getElementById("cls-check").classList.contains("on"),
+    bmr,bw,pg,act,
+    runKm:gv("run-km",0),runDur:gv("run-dur",0),
+    wktSplit,wktOther:document.getElementById("wkt-other").value,
+    clsTopic:document.getElementById("cls-topic").value,clsHrs:gv("cls-hrs",0),
+    nutCal:gv("nut-cal",0),nutProtein:gv("nut-protein",0)
+  };
+  localStorage.setItem(dateKey(new Date()),JSON.stringify(d));
+  updateUI(d);
+}
+
+function updateUI(d){
+  const bmr=d.bmr||0,bw=d.bw||62,act=d.act||1.55,pg=d.pg||120;
+  const tdee=bmr>0?Math.round(bmr*act):0;
+  const runCal=calcRunCal(d.runKm||0,bw);
+  const wktCal=d.wktDone?calcWktCal(d.wktSplit):0;
+  const totalBurned=tdee+runCal+wktCal;
+  const cIn=d.nutCal||0;
+  document.getElementById("s-tdee").textContent=tdee>0?tdee.toLocaleString():"—";
+  document.getElementById("s-out").textContent=totalBurned>0?totalBurned.toLocaleString():"—";
+  document.getElementById("s-in").textContent=cIn>0?cIn.toLocaleString():"—";
+  document.getElementById("s-pg").textContent=pg;
+  if(bmr>0)document.getElementById("tdee-hint").textContent="BMR "+Math.round(bmr)+" × "+act+" = "+tdee.toLocaleString()+" kcal maintenance";
+  else document.getElementById("tdee-hint").textContent="";
+  const runKm=d.runKm||0,runDur=d.runDur||0;
+  let runHint="";
+  if(runKm>0){
+    runHint="Est. "+runCal+" kcal burned";
+    if(runDur>0){const pace=runDur/runKm,pMin=Math.floor(pace),pSec=Math.round((pace-pMin)*60).toString().padStart(2,"0");runHint+="  ·  Pace "+pMin+":"+pSec+" min/km";}
+  }
+  document.getElementById("run-hint").textContent=runHint;
+  document.getElementById("wkt-hint").textContent=(d.wktDone&&d.wktSplit)?"Est. "+wktCal+" kcal for "+splitLabel(d):"";
+  const bc=document.getElementById("s-balance-card"),bv=document.getElementById("s-balance"),bl=document.getElementById("s-balance-label"),bs=document.getElementById("s-balance-sub");
+  if(cIn>0||totalBurned>0){
+    const net=cIn-totalBurned;
+    bv.textContent=(net>0?"+":"")+net.toLocaleString()+" kcal";
+    if(net<0){bl.textContent="Deficit";bs.textContent=Math.abs(net).toLocaleString()+" kcal under";bc.className="scard deficit";}
+    else if(net>0){bl.textContent="Surplus";bs.textContent=net.toLocaleString()+" kcal over";bc.className="scard surplus";}
+    else{bl.textContent="Balance";bs.textContent="At maintenance";bc.className="scard";}
+  }else{bv.textContent="—";bl.textContent="Balance";bs.textContent="—";bc.className="scard";}
+  const protein=d.nutProtein||0,pct=Math.min(100,Math.round((protein/(pg||120))*100));
+  document.getElementById("s-protein").textContent=protein>0?protein+"g":"—";
+  document.getElementById("s-protein-bar").style.width=pct+"%";
+  document.getElementById("s-protein-bar").className="prog-bar"+(pct<70?" warn":"");
+  const chips=[];
+  if(tdee>0)chips.push("Maintenance "+tdee.toLocaleString()+" kcal");
+  if(runCal>0)chips.push("Running +"+runCal+" kcal");
+  if(wktCal>0)chips.push((splitLabel(d)||"Workout")+" +"+wktCal+" kcal");
+  if(totalBurned>0)chips.push("Total out "+totalBurned.toLocaleString()+" kcal");
+  document.getElementById("cal-breakdown").innerHTML=chips.length?chips.map(c=>`<span class="chip">${c}</span>`).join(""):`<span class="chip">Enter BMR and activity level above</span>`;
+}
+
+function shiftWeek(dir){
+  const n=weekOffset+dir;
+  if(n>0)return;
+  weekOffset=n;selectedDay=null;buildWeek();
+}
+
+function buildWeek(){
+  const days=getWeekDays(weekOffset);
+  const today=new Date().toDateString();
+  const fmt=d=>d.getDate()+" "+MONTHS[d.getMonth()];
+  document.getElementById("week-label").textContent=fmt(days[0])+" – "+fmt(days[6])+" "+days[6].getFullYear();
+  document.getElementById("prev-week-btn").disabled=false;
+  document.getElementById("next-week-btn").disabled=weekOffset===0;
+
+  const allData=days.map(d=>JSON.parse(localStorage.getItem(dateKey(d))||"null"));
+  const nets=allData.map(d=>getNetForDay(d));
+  const maxAbs=Math.max(...nets.filter(n=>n!==null).map(n=>Math.abs(n)),500);
+
+  const grid=document.getElementById("week-grid");
+  grid.innerHTML="";
+  days.forEach((d,i)=>{
+    const isToday=d.toDateString()===today;
+    const data=allData[i];
+    const net=nets[i];
+    const barH=net!==null?Math.max(4,Math.round((Math.abs(net)/maxAbs)*62)):3;
+    const barClass=net===null?"day-bar":net<0?"day-bar def":net>0?"day-bar sur":"day-bar";
+    const valText=net===null?"–":(net>0?"+":"")+Math.round(Math.abs(net));
+    const isSelected=selectedDay&&d.toDateString()===selectedDay.toDateString();
+    const col=document.createElement("div");
+    col.className="day-col"+(isToday?" today-ring":"")+(isSelected?" selected":"");
+    col.onclick=()=>{selectedDay=isSelected?null:d;buildWeek();};
+    const dots=`<div class="day-dots">${data&&data.runDone?'<div class="day-dot run"></div>':''}${data&&data.wktDone?'<div class="day-dot wkt"></div>':''}</div>`;
+    col.innerHTML=`<div class="day-name">${DAYS[d.getDay()]}<span class="day-date">${d.getDate()} ${MONTHS[d.getMonth()]}</span></div><div class="day-bar-wrap"><div class="${barClass}" style="height:${barH}px"></div></div><div class="day-val">${valText}</div>${dots}`;
+    grid.appendChild(col);
+  });
+
+  let totalKm=0,sessions=0,studyHrs=0,proteins=[],loggedNets=[];
+  allData.forEach((data,i)=>{
+    if(!data)return;
+    totalKm+=data.runKm||0;
+    if(data.runDone)sessions++;
+    if(data.wktDone)sessions++;
+    studyHrs+=data.clsHrs||0;
+    if(data.nutProtein)proteins.push(data.nutProtein);
+    if(nets[i]!==null)loggedNets.push(nets[i]);
+  });
+  const avgNet=loggedNets.length?Math.round(loggedNets.reduce((a,b)=>a+b,0)/loggedNets.length):null;
+  const avgProtein=proteins.length?Math.round(proteins.reduce((a,b)=>a+b,0)/proteins.length):null;
+  document.getElementById("w-km").textContent=totalKm>0?totalKm.toFixed(1)+" km":"—";
+  document.getElementById("w-avg").textContent=avgNet!==null?(avgNet>0?"+":"")+avgNet+" kcal":"—";
+  document.getElementById("w-avg-card").className=avgNet===null?"scard":avgNet<0?"scard deficit":"scard surplus";
+  document.getElementById("w-sessions").textContent=sessions||"—";
+  document.getElementById("w-study").textContent=studyHrs>0?studyHrs.toFixed(1)+"h":"—";
+  document.getElementById("w-protein").textContent=avgProtein?avgProtein+"g":"—";
+
+  const wrap=document.getElementById("day-detail-wrap");
+  if(selectedDay){
+    const di=days.findIndex(d=>d.toDateString()===selectedDay.toDateString());
+    const data=allData[di];
+    if(data){
+      const bw=data.bw||62,act=data.act||1.55,bmr=data.bmr||0;
+      const tdee=bmr>0?Math.round(bmr*act):0;
+      const runCal=calcRunCal(data.runKm||0,bw);
+      const wktCal=data.wktDone?calcWktCal(data.wktSplit):0;
+      const totalBurned=tdee+runCal+wktCal;
+      const net=(data.nutCal||0)-totalBurned;
+      const nc=net<0?"def":net>0?"sur":"";
+      wrap.innerHTML=`<div class="day-detail">
+        <div class="day-detail-title">${selectedDay.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+        <div class="detail-row"><span class="detail-label">Calories in</span><span class="detail-val">${data.nutCal?data.nutCal.toLocaleString()+" kcal":"—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Total burned</span><span class="detail-val">${totalBurned?totalBurned.toLocaleString()+" kcal":"—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Balance</span><span class="detail-val ${nc}">${data.nutCal||totalBurned?(net>0?"+":"")+net.toLocaleString()+" kcal":"—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Running</span><span class="detail-val">${data.runDone&&data.runKm?data.runKm+" km"+(data.runDur?" · "+data.runDur+" min":""):"—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Workout</span><span class="detail-val">${data.wktDone&&data.wktSplit?splitLabel(data):"—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Protein</span><span class="detail-val">${data.nutProtein?data.nutProtein+"g":"—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Study</span><span class="detail-val">${data.clsDone&&data.clsHrs?data.clsHrs+"h"+(data.clsTopic?" · "+data.clsTopic:""):"—"}</span></div>
+      </div>`;
+    }else{
+      wrap.innerHTML=`<div class="day-detail"><div class="day-detail-title">${selectedDay.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</div><div style="font-size:13px;color:var(--text-muted);padding:8px 0">No data logged for this day.</div></div>`;
+    }
+  }else{wrap.innerHTML="";}
+
+  buildAllWeeks();
+}
+
+function buildAllWeeks(){
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith("t6_")&&k!==profileKey);
+  const container=document.getElementById("all-weeks");
+  if(!keys.length){container.innerHTML=`<div style="font-size:13px;color:var(--text-muted)">No data yet. Start logging daily and it will appear here.</div>`;return;}
+  const dates=keys.map(k=>{const d=new Date(k.replace("t6_",""));return isNaN(d)?null:d;}).filter(Boolean).sort((a,b)=>b-a);
+  const weekMap={};
+  dates.forEach(d=>{
+    const dow=(d.getDay()+6)%7,mon=new Date(d);
+    mon.setDate(d.getDate()-dow);mon.setHours(0,0,0,0);
+    const wk=mon.toDateString();
+    if(!weekMap[wk])weekMap[wk]={start:mon,days:[]};
+    weekMap[wk].days.push(d);
+  });
+  const weeks=Object.values(weekMap).sort((a,b)=>b.start-a.start);
+  const fmt=d=>d.getDate()+" "+MONTHS[d.getMonth()];
+  container.innerHTML="";
+  weeks.forEach(w=>{
+    const end=new Date(w.start);end.setDate(w.start.getDate()+6);
+    let totalKm=0,nets=[],proteins=[],sessions=0,studyHrs=0;
+    w.days.forEach(d=>{
+      const data=JSON.parse(localStorage.getItem(dateKey(d))||"null");
+      if(!data)return;
+      totalKm+=data.runKm||0;
+      if(data.runDone)sessions++;if(data.wktDone)sessions++;
+      studyHrs+=data.clsHrs||0;
+      if(data.nutProtein)proteins.push(data.nutProtein);
+      const net=getNetForDay(data);if(net!==null)nets.push(net);
+    });
+    const avgNet=nets.length?Math.round(nets.reduce((a,b)=>a+b,0)/nets.length):null;
+    const avgP=proteins.length?Math.round(proteins.reduce((a,b)=>a+b,0)/proteins.length):null;
+    const netColor=avgNet===null?"inherit":avgNet<0?"var(--text-success)":"var(--text-danger)";
+    const row=document.createElement("div");row.className="week-row";
+    row.innerHTML=`<div class="week-row-label">${fmt(w.start)} – ${fmt(end)}</div>
+      <div class="week-row-stat"><span class="ws-label">Avg balance</span><span class="ws-val" style="color:${netColor}">${avgNet!==null?(avgNet>0?"+":"")+avgNet+" kcal":"—"}</span></div>
+      <div class="week-row-stat"><span class="ws-label">Total km</span><span class="ws-val">${totalKm>0?totalKm.toFixed(1)+" km":"—"}</span></div>
+      <div class="week-row-stat"><span class="ws-label">Sessions</span><span class="ws-val">${sessions||"—"}</span></div>
+      <div class="week-row-stat"><span class="ws-label">Avg protein</span><span class="ws-val">${avgP?avgP+"g":"—"}</span></div>
+      <div class="week-row-stat"><span class="ws-label">Study hrs</span><span class="ws-val">${studyHrs>0?studyHrs.toFixed(1)+"h":"—"}</span></div>`;
+    container.appendChild(row);
+  });
+}
+
+function calcBMR(){
+  const age=gv("b-age",0),ht=gv("b-ht",0),wt=gv("b-wt",0),sex=document.getElementById("b-sex").value;
+  if(!age||!ht||!wt){document.getElementById("bmr-result").style.display="none";document.getElementById("bmr-formula").textContent="";return;}
+  const bmr=sex==="m"?Math.round(10*wt+6.25*ht-5*age+5):Math.round(10*wt+6.25*ht-5*age-161);
+  document.getElementById("br-bmr").textContent=bmr.toLocaleString()+" kcal";
+  document.getElementById("br-sed").textContent=Math.round(bmr*1.2).toLocaleString()+" kcal";
+  document.getElementById("br-mod").textContent=Math.round(bmr*1.55).toLocaleString()+" kcal";
+  document.getElementById("bmr-result").style.display="flex";
+  document.getElementById("bmr-formula").textContent="Formula: (10×"+wt+" + 6.25×"+ht+" − 5×"+age+(sex==="m"?" + 5":" − 161")+") = "+bmr+" kcal";
+  window._calcBMR=bmr;window._calcBW=wt;
+}
+function useBMR(){
+  if(!window._calcBMR)return;
+  document.getElementById("bmr").value=window._calcBMR;
+  if(window._calcBW)document.getElementById("bw").value=window._calcBW;
+  switchTab("today");save();
+}
+function switchTab(tab){
+  ["today","week","bmr"].forEach((t,i)=>{
+    document.getElementById("view-"+t).classList.toggle("active",t===tab);
+    document.querySelectorAll(".tab")[i].classList.toggle("active",t===tab);
+  });
+  if(tab==="week")buildWeek();
+}
+function toggleCheck(id){document.getElementById(id+"-check").classList.toggle("on");save();}
+function setCheck(id,val){const el=document.getElementById(id+"-check");val?el.classList.add("on"):el.classList.remove("on");}
+
+function restore(){
+  const profile=JSON.parse(localStorage.getItem(profileKey)||"{}");
+  const d=JSON.parse(localStorage.getItem(dateKey(new Date()))||"{}");
+  const m=Object.assign({},profile,d);
+  const set=(id,val)=>{if(val!==undefined&&val!==null&&val!=="")document.getElementById(id).value=val;};
+  set("bmr",m.bmr);set("bw",m.bw);set("protein-goal",m.pg);
+  if(m.act)document.getElementById("activity").value=m.act;
+  set("run-km",d.runKm);set("run-dur",d.runDur);
+  if(d.wktSplit)document.getElementById("wkt-split").value=d.wktSplit;
+  set("wkt-other",d.wktOther);
+  if(d.wktSplit==="Others")document.getElementById("wkt-other-wrap").style.display="flex";
+  set("cls-topic",d.clsTopic);set("cls-hrs",d.clsHrs);
+  set("nut-cal",d.nutCal);set("nut-protein",d.nutProtein);
+  setCheck("run",d.runDone);setCheck("wkt",d.wktDone);setCheck("cls",d.clsDone);
+  if(Object.keys(m).length)updateUI(m);
+}
+
+function resetDay(){
+  localStorage.removeItem(dateKey(new Date()));
+  ["run-km","run-dur","cls-topic","cls-hrs","nut-cal","nut-protein","wkt-other"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("wkt-split").value="";
+  document.getElementById("wkt-other-wrap").style.display="none";
+  setCheck("run",false);setCheck("wkt",false);setCheck("cls",false);
+  const profile=JSON.parse(localStorage.getItem(profileKey)||"{}");
+  updateUI(profile);
+}
+
+document.getElementById("date-lbl").textContent=new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+restore();
+</script>
+</body>
+</html>

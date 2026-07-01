@@ -1,0 +1,9 @@
+{
+  "name": "Daily Tracker",
+  "short_name": "Tracker",
+  "start_url": "./daily_tracker_pwa.html",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": []
+}
